@@ -1,0 +1,15 @@
+# IntelliJ
+.idea/
+*.iml
+
+# Java
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Env / secrets
+frontend/.env
+backend/src/main/resources/firebase-service-account.json
