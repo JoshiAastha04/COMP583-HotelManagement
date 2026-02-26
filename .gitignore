@@ -12,4 +12,4 @@ frontend/dist/
 
 # Env / secrets
 frontend/.env
-backend/src/main/resources/firebase-service-account.jsonbackend/src/main/resources/firebase-service-account.json
+backend/src/main/resources/firebase-service-account.json
