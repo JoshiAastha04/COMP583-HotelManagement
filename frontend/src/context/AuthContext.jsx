@@ -64,7 +64,6 @@ export function AuthProvider({ children }) {
                     }
                 } catch (err) {
                     console.warn("Firestore unavailable, using auth profile:", err.message)
-                    // Fall back to auth user data — app still works
                     setUserProfile({
                         uid: user.uid,
                         name: user.displayName || "",

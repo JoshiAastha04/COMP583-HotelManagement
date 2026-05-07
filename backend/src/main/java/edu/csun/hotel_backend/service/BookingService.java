@@ -7,22 +7,27 @@ import edu.csun.hotel_backend.repository.BookingRepo;
 import edu.csun.hotel_backend.repository.RoomRepo;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class BookingService {
 
     private final BookingRepo bookingRepo;
     private final RoomRepo roomRepo;
+    private final RestTemplate restTemplate;
 
     public BookingService(BookingRepo bookingRepo, RoomRepo roomRepo) {
         this.bookingRepo = bookingRepo;
         this.roomRepo = roomRepo;
+        this.restTemplate = new RestTemplate();
     }
 
     public Booking createBooking(BookingRequest req, String userId, String guestName, String guestEmail) {
@@ -40,7 +45,6 @@ public class BookingService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is not available.");
         }
 
-        // Check for conflicting bookings
         List<Booking> conflicts = bookingRepo.findByRoomIdAndStatusIn(
                 room.getId(),
                 List.of(Booking.Status.CONFIRMED, Booking.Status.CHECKED_IN)
@@ -72,7 +76,27 @@ public class BookingService {
         booking.setTotalPrice(totalPrice);
         booking.setStatus(Booking.Status.CONFIRMED);
 
-        return bookingRepo.save(booking);
+        Booking saved = bookingRepo.save(booking);
+
+        try {
+            Map<String, String> notifRequest = new HashMap<>();
+            notifRequest.put("guestEmail", guestEmail);
+            notifRequest.put("guestName", guestName);
+            notifRequest.put("bookingId", String.valueOf(saved.getId()));
+            notifRequest.put("checkInDate", saved.getCheckIn().toString());
+            notifRequest.put("selfCheckInCode", saved.getConfirmationCode());
+
+            restTemplate.postForObject(
+                    "http://localhost:8082/api/notify/booking",
+                    notifRequest,
+                    String.class
+            );
+            System.out.println("✅ Notification sent for booking: " + saved.getId());
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+
+        return saved;
     }
 
     public List<Booking> getBookingsByUser(String userId) {
